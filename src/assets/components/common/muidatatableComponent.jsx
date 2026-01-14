@@ -31,7 +31,7 @@ const CustomFilterPanel = (props) => {
 
 const MuiDataTableComponent = (props) => {
     const { overviewLoading } = useContext(overviewContext)
-    const { columns, data, isExport, isLoading, dynamicKey = '' } = props;
+    const { columns, data, isExport, isLoading, dynamicKey = '', getRowId } = props;
     const customLocaleText = {
         filterPanelOperator: 'Condition',
     }
@@ -138,6 +138,7 @@ const MuiDataTableComponent = (props) => {
                     disableRowSelectionOnClick
                     filterModel={filterModel}
                     onFilterModelChange={setFilterModel}
+                    getRowId={getRowId}
                     initialState={{
                         pagination: {
                             paginationModel: {

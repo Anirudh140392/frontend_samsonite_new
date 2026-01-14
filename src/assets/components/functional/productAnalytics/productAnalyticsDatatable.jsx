@@ -1,17 +1,124 @@
-import React, { useEffect, useContext, useState,useMemo, useRef } from "react";
+import React, { useEffect, useContext, useState, useRef } from "react";
 import MuiDataTableComponent from "../../common/muidatatableComponent";
 import '../../../styles/keywordsComponent/keywordsComponent.less';
 import { Typography, Snackbar, Alert } from "@mui/material";
 import overviewContext from "../../../../store/overview/overviewContext";
 import { useSearchParams } from "react-router";
 import ColumnPercentageDataComponent from "../../common/columnPercentageDataComponent";
-import NewPercentageDataComponent from "../../common/newPercentageDataComponent";
-import { cachedFetch } from "../../../../services/cachedFetch";
-import { getCache } from "../../../../services/cacheUtils";
+
+
+const ProductAnalyticsColumnFlipkart = [
+    {
+        field: "product_name",
+        headerName: "PRODUCT",
+        minWidth: 200,
+        renderCell: (params) => params.row.product_name,
+    },
+    {
+        field: "fsn_id",
+        headerName: "FSN ID",
+        minWidth: 150,
+    },
+    {
+        field: "ad_spend_current",
+        headerName: "AD SPEND",
+        minWidth: 180,
+        renderCell: (params) => (
+            <ColumnPercentageDataComponent
+                mainValue={params.row.ad_spend_current}
+                percentValue={params.row.ad_spend_change}
+            />
+        ),
+    },
+    {
+        field: "views_current",
+        headerName: "VIEWS",
+        minWidth: 180,
+        renderCell: (params) => (
+            <ColumnPercentageDataComponent
+                mainValue={params.row.views_current}
+                percentValue={params.row.views_change}
+            />
+        ),
+    },
+    {
+        field: "direct_units_sold_current",
+        headerName: "UNITS SOLD",
+        minWidth: 180,
+        renderCell: (params) => (
+            <ColumnPercentageDataComponent
+                mainValue={params.row.direct_units_sold_current}
+                percentValue={params.row.direct_units_sold_change}
+            />
+        ),
+    },
+    {
+        field: "direct_revenue_current",
+        headerName: "REVENUE",
+        minWidth: 180,
+        renderCell: (params) => (
+            <ColumnPercentageDataComponent
+                mainValue={params.row.direct_revenue_current}
+                percentValue={params.row.direct_revenue_change}
+            />
+        ),
+    },
+    {
+        field: "roas_current",
+        headerName: "ROAS",
+        minWidth: 150,
+        renderCell: (params) => (
+            <ColumnPercentageDataComponent
+                mainValue={params.row.roas_current}
+                percentValue={params.row.roas_change}
+            />
+        ),
+    },
+    {
+        field: "cvr_current",
+        headerName: "CVR",
+        minWidth: 120,
+        renderCell: (params) => (
+            <ColumnPercentageDataComponent
+                mainValue={params.row.cvr_current}
+                percentValue={params.row.cvr_change}
+            />
+        ),
+    },
+    {
+        field: "osa_pct_current",
+        headerName: "OSA %",
+        minWidth: 150,
+        renderCell: (params) => (
+            <ColumnPercentageDataComponent
+                mainValue={params.row.osa_pct_current}
+                percentValue={params.row.osa_pct_change}
+            />
+        ),
+    },
+
+    // 🔻 Hidden (previous data fields)
+    { field: "ad_spend_previous", headerName: "AD SPEND PREV", hide: true },
+    { field: "views_previous", headerName: "VIEWS PREV", hide: true },
+    { field: "direct_units_sold_previous", headerName: "UNITS SOLD PREV", hide: true },
+    { field: "direct_revenue_previous", headerName: "REVENUE PREV", hide: true },
+    { field: "roas_previous", headerName: "ROAS PREV", hide: true },
+    { field: "cvr_previous", headerName: "CVR PREV", hide: true },
+    { field: "osa_pct_previous", headerName: "OSA PREV", hide: true },
+
+    // 🔻 Hidden (change-only fields)
+    { field: "ad_spend_change", headerName: "AD SPEND CHANGE", hide: true },
+    { field: "views_change", headerName: "VIEWS CHANGE", hide: true },
+    { field: "direct_units_sold_change", headerName: "UNITS SOLD CHANGE", hide: true },
+    { field: "direct_revenue_change", headerName: "REVENUE CHANGE", hide: true },
+    { field: "roas_change", headerName: "ROAS CHANGE", hide: true },
+    { field: "cvr_change", headerName: "CVR CHANGE", hide: true },
+    { field: "osa_pct_change", headerName: "OSA CHANGE", hide: true },
+];
 
 const ProductAnalyticsDatatable = () => {
 
-    const { dateRange, formatDate,getBrandsData, brands, } = useContext(overviewContext)
+    const { dateRange, formatDate } = useContext(overviewContext)
 
     const [productAnalyticsData, setProductAnalyticsData] = useState({})
     const [isLoading, setIsLoading] = useState(false)
@@ -30,6 +137,9 @@ const ProductAnalyticsDatatable = () => {
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
+        setProductAnalyticsData({});
+        setIsLoading(true);
+
         const token = localStorage.getItem("accessToken");
         if (!token) {
             console.error("No access token found");
@@ -41,42 +151,21 @@ const ProductAnalyticsDatatable = () => {
         const endDate = formatDate(dateRange[0].endDate);
 
         try {
-            const url = `https://react-api-script.onrender.com/samsonite/product-analytics?platform=${operator}&start_date=${startDate}&end_date=${endDate}`;
-            const cacheKey = `cache:GET:${url}`;
-
-            // Serve from cache immediately if available and skip any request
-            const cached = getCache(cacheKey);
-            if (cached) {
-                setProductAnalyticsData(cached);
-                setIsLoading(false);
-                return;
-            }
-
-            setProductAnalyticsData({});
-            setIsLoading(true);
-
-            const response = await cachedFetch(
-                url,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    signal: controller.signal,
+            const response = await fetch(`https://react-api-script.onrender.com/samsonite/product-analytics?platform=${operator}&start_date=${startDate}&end_date=${endDate}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
-                {
-                    ttlMs: 5 * 60 * 1000,
-                    cacheKey
-                }
-            );
+                signal: controller.signal,
+            });
 
             if (!response.ok) {
                 throw new Error(`Error: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
-            setProductAnalyticsData(data);
+            setProductAnalyticsData(data || {});
         } catch (error) {
             if (error.name === "AbortError") {
                 console.log("Previous request aborted due to operator change.");
@@ -104,73 +193,6 @@ const ProductAnalyticsDatatable = () => {
         }
     }, [operator, dateRange]);
 
-    const ProductAnalyticsColumnFlipkart = [
-        {
-            field: "product_name",
-            headerName: "PRODUCT",
-            minWidth: 150,
-            renderCell: (params) => (
-                <div className="text-icon-div">
-                    <Typography variant="body2">{params.row.product_name}</Typography>
-                </div>
-            ),
-        },
-        
-       
-       
-        {
-            field: "spends",
-            headerName: "SPENDS",
-            minWidth: 200,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.spends} percentValue={params.row.spends_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        {
-            field: "direct_revenue",
-            headerName: "SALES",
-            minWidth: 200,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.direct_revenue} percentValue={params.row.direct_revenue_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        {
-            field: "ctr",
-            headerName: "CTR",
-            minWidth: 150,
-            renderCell: (params) => (
-                <NewPercentageDataComponent firstValue={params.row.ctr} secValue={params.row.ctr_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-       
-        {
-            field: "tacos",
-            headerName: "TACOS",
-            minWidth: 150,
-            renderCell: (params) => (
-                <NewPercentageDataComponent firstValue={params.row.troas} secValue={params.row.troas_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        {
-            field: "roas_direct",
-            headerName: "ROAS",
-            minWidth: 150,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.roas_direct} percentValue={params.row.roas_direct_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        }
-        
-
-    ];
-
     const handleSnackbarOpen = (message, severity) => {
         setSnackbar({ open: true, message, severity });
     };
@@ -179,124 +201,6 @@ const ProductAnalyticsDatatable = () => {
         setSnackbar({ ...snackbar, open: false });
     };
 
-
-     const ProductAnalyticsColumnZepto = [
-        {
-            field: "product_name",
-            headerName: "PRODUCT",
-            minWidth: 150,
-            renderCell: (params) => (
-                <div className="text-icon-div">
-                    <Typography variant="body2">{params.row.product_name}</Typography>
-                </div>
-            ),
-        },
-       
-        {
-            field: "clicks",
-            headerName: "CLICKS",
-            minWidth: 150,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.clicks} percentValue={params.row.clicks_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        {
-            field: "spend",
-            headerName: "SPENDS",
-            minWidth: 200,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.spend} percentValue={params.row.spend_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        {
-            field: "impressions",
-            headerName: "IMPRESSIONS",
-            minWidth: 200,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.impressions} percentValue={params.row.impressions_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        {
-            field: "aov",
-            headerName: "AOV",
-            minWidth: 150,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.aov} percentValue={params.row.aov_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        {
-            field: "orders",
-            headerName: "ORDERS",
-            minWidth: 150,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.orders} percentValue={params.row.orders_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        {
-            field: "revenue",
-            headerName: "SALES",
-            minWidth: 150,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.revenue} percentValue={params.row.revenue_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-       
-        {
-            field: "ctr",
-            headerName: "CTR",
-            minWidth: 150,
-            renderCell: (params) => (
-                <NewPercentageDataComponent firstValue={params.row.ctr} secValue={params.row.ctr_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        {
-            field: "apm",
-            headerName: "CPM",
-            minWidth: 150,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.cpm} percentValue={params.row.cpm_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        
-        
-        
-        {
-            field: "roas",
-            headerName: "ROAS",
-            minWidth: 150,
-            renderCell: (params) => (
-                <ColumnPercentageDataComponent mainValue={params.row.roas} percentValue={params.row.roas_change} />
-            ), type: "number", align: "left",
-            headerAlign: "left",
-        },
-        
-        
-    ];
-
-     const columns = useMemo(() => {
-            if (operator === "Flipkart") return ProductAnalyticsColumnFlipkart;
-    
-            if (operator === "Zepto") return ProductAnalyticsColumnZepto;
-            return [];
-        }, [operator, brands]);
-
-   
-
     return (
         <React.Fragment>
             <div className="shadow-box-con-keywords aggregated-view-con">
@@ -304,8 +208,10 @@ const ProductAnalyticsDatatable = () => {
                     <MuiDataTableComponent
                         isLoading={isLoading}
                         isExport={true}
-                        columns={columns}
-                        data={productAnalyticsData.data || []} />
+                        columns={ProductAnalyticsColumnFlipkart}
+                        data={productAnalyticsData.data || []}
+                        getRowId={(row) => row.fsn_id}
+                    />
                 </div>
             </div>
             <Snackbar anchorOrigin={{ vertical: "top", horizontal: "center" }}
