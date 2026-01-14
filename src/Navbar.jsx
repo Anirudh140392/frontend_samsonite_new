@@ -399,7 +399,7 @@ const Navbar = () => {
                                         }
                                     />
                                 )}
-                                {!["Flipkart","Amazon","Zepto","Swiggy","BigBasket"].includes(operatorName) && (
+                                {["Flipkart","Amazon","Zepto","Swiggy","BigBasket"].includes(operatorName) && (
                                     <RedirectLink
                                         url={`/product-analytics${operatorTypeParams === ""
                                             ? `?operator=${OPERATOR.AMAZON}`

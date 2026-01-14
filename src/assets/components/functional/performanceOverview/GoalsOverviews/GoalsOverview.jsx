@@ -1,70 +1,85 @@
-import React, { useState } from "react";
-import { Card, Button, Dropdown, Spinner } from "react-bootstrap";
+import React, { useState, useEffect, useContext } from "react";
+import { Card, Button, Dropdown, Spinner, Alert } from "react-bootstrap";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { FiRefreshCw } from "react-icons/fi";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { useSearchParams } from "react-router";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../../../../../assets/styles/goals/goalService.less";
-import AdvancedDataTable from "../../../common/AdvancedDataTable";
 import AddEditGoal from "./AddEditGoal";
+import overviewContext from "../../../../../store/overview/overviewContext";
+import AdvancedDataTable from "../../../common/AdvancedDataTable";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const initialRows = [
-    {
-        id: 1,
-        goalName: "Hair Color Spends",
-        metricUnit: "Spends",
-        target: "5,00,000",
-        achievement: "4,80,000",
-        percent: "96%",
-        status: "Not Achieved",
-    },
-    {
-        id: 2,
-        goalName: "Hair Color ROAS",
-        metricUnit: "ROAS",
-        target: "3",
-        achievement: "3.2",
-        percent: "106%",
-        status: "Achieved",
-    },
-    {
-        id: 3,
-        goalName: "Account Spends",
-        metricUnit: "Spends",
-        target: "10,00,000",
-        achievement: "9,50,000",
-        percent: "95%",
-        status: "Not Achieved",
-    },
-    {
-        id: 4,
-        goalName: "Face Wash Goals",
-        metricUnit: "Spends",
-        target: "3,00,000",
-        achievement: "3,20,000",
-        percent: "107%",
-        status: "Achieved",
-    },
-    {
-        id: 5,
-        goalName: "Face Wash ROAS",
-        metricUnit: "ROAS",
-        target: "4",
-        achievement: "2.5",
-        percent: "62%",
-        status: "Not Achieved",
-    },
-];
-
 const GoalsOverview = () => {
-    const [rows, setRows] = useState(initialRows);
+    const [rows, setRows] = useState([]);
+    const [allGoalsData, setAllGoalsData] = useState([]);
     const [filter, setFilter] = useState("Active");
     const [loading, setLoading] = useState(false);
     const [showAddGoal, setShowAddGoal] = useState(false);
+    const [error, setError] = useState(null);
+    const [searchParams] = useSearchParams();
+    const operator = searchParams.get("operator");
+    const { formatDate } = useContext(overviewContext);
+
+    const fetchGoalsData = async () => {
+        if (!operator) return;
+        
+        setLoading(true);
+        setError(null);
+        try {
+            const token = localStorage.getItem("accessToken");
+            const url = `https://react-api-script.onrender.com/goalsengine/goals/list?platform=${operator}&brand=Samsonite`;
+            console.log("Fetching from URL:", url);
+            
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.error || `Failed to fetch goals data: ${response.status}`;
+                console.error("API Error Response:", errorData);
+                setError(errorMessage);
+                throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+            const mappedGoals = data.data.goals.map((goal) => ({
+                id: goal.id,
+                uuid: goal.uuid,
+                goalName: goal.goal_name,
+                metricUnit: goal.metric_name,
+                target: goal.metric_value.toString(),
+                achievement: goal.actual_value.toString(),
+                percent: `${goal.achievement_percentage.toFixed(2)}%`,
+                status: goal.status === "ACHIEVED" ? "Achieved" : "Not Achieved",
+                dataLevel: goal.data_level,
+                dataOperator: goal.data_operator,
+                dataValues: goal.data_values,
+                priority: goal.priority_label,
+            }));
+            setAllGoalsData(mappedGoals);
+            setRows(mappedGoals);
+        } catch (error) {
+            console.error("Error fetching goals data:", error);
+            setAllGoalsData([]);
+            setRows([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchGoalsData();
+    }, [operator]);
 
     const filteredRows = rows.filter((row) => {
         if (filter === "Active")
@@ -122,10 +137,7 @@ const GoalsOverview = () => {
     const handleRefresh = () => {
         setLoading(true);
         setFilter("Active");
-        setTimeout(() => {
-            setRows([...initialRows]);
-            setLoading(false);
-        }, 1000);
+        fetchGoalsData();
     };
 
     const handleExport = () => {
@@ -154,6 +166,11 @@ const GoalsOverview = () => {
 
     return (
         <Card className="goals-card p-3">
+            {error && (
+                <Alert variant="danger" onClose={() => setError(null)} dismissible>
+                    <strong>Error loading goals:</strong> {error}
+                </Alert>
+            )}
             <div className="d-flex justify-content-between align-items-center mb-3 goals-header flex-wrap">
                 <h5>Goals Overview</h5>
                 <div className="d-flex gap-2 align-items-center flex-wrap">

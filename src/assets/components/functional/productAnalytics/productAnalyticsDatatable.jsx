@@ -104,7 +104,7 @@ const ProductAnalyticsDatatable = () => {
         }
     }, [operator, dateRange]);
 
-    const ProductAnalyticsColumnAmazon = [
+    const ProductAnalyticsColumnFlipkart = [
         {
             field: "product_name",
             headerName: "PRODUCT",
@@ -115,8 +115,7 @@ const ProductAnalyticsDatatable = () => {
                 </div>
             ),
         },
-        { field: "category", headerName: "CATEGORY", minWidth: 100 },
-        { field: "ad_groups", headerName: "# AD GROUPS", minWidth: 150 },
+        
        
        
         {
@@ -290,7 +289,7 @@ const ProductAnalyticsDatatable = () => {
     ];
 
      const columns = useMemo(() => {
-            if (operator === "Amazon") return ProductAnalyticsColumnAmazon;
+            if (operator === "Flipkart") return ProductAnalyticsColumnFlipkart;
     
             if (operator === "Zepto") return ProductAnalyticsColumnZepto;
             return [];
