@@ -9,6 +9,7 @@ import GoalComponent from "./overview/goalComponent";
 import ErrorBoundary from "../../common/erroBoundryComponent";
 import OnePercentageDataComponent from "../../common/onePercentageComponent";
 import OverviewCardTopBox from "./overview/OverviewCardTopBox";
+import GoalsOverview from "./GoalsOverviews/GoalsOverview";
 
 const OverviewComponent = () => {
     
@@ -555,6 +556,9 @@ const OverviewComponent = () => {
                                     columns={columns}
                                     data={filteredCatData} />
                             </div>
+                             <div className="shadow-box-con top-overview-con">
+        <GoalsOverview />
+      </div>
                         </div>
                     </div>
                 </div>
