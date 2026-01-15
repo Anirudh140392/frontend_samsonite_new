@@ -21,6 +21,7 @@
     "axios": "^1.7.9",
     "bootstrap": "^5.3.8",
     "chart.js": "^4.5.1",
+    "date-fns": "^3.0.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
     "less": "^4.2.1",
